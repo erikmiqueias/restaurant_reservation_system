@@ -10,7 +10,7 @@ export const healthCheckRoutes = (app: FastifyInstance) => {
     handler: async (_, reply) => {
       reply.send({
         status: "API is running",
-        message: `Access the API docs at ${app.swagger}`,
+        message: `Access the API docs at http://localhost:${process.env.PORT}/docs`,
       });
     },
   });
