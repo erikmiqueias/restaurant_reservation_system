@@ -46,6 +46,14 @@ export const buildApp = async () => {
           name: "Table",
           description: "Table related endpoints",
         },
+        {
+          name: "Reservation",
+          description: "Reservation related endpoints",
+        },
+        {
+          name: "Health Check",
+          description: "Health check endpoints",
+        },
       ],
       components: {
         securitySchemes: {
