@@ -7,7 +7,10 @@ export const healthCheckRoutes = (app: FastifyInstance) => {
   typedRoute.route({
     method: "GET",
     url: "/",
-    schema: {},
+    schema: {
+      tags: ["Health Check"],
+      description: "Health check endpoint",
+    },
     handler: async (_, reply) => {
       reply.send({
         status: "API is running",
