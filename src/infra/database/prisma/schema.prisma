@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String
+  email     String   @unique
+  password  String
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reservations Reservation[]
+}
+
+model Table {
+  id          String      @id @default(uuid())
+  tableNumber Int         @unique
+  capacity    Int
+  status      TableStatus @default(ACTIVE)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  reservations Reservation[]
+}
+
+model Reservation {
+  id         String            @id @default(uuid())
+  startTime  DateTime
+  endTime    DateTime
+  status     ReservationStatus @default(ACTIVE)
+  guestCount Int
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  tableId String
+  userId  String
+
+  table Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum TableStatus {
+  ACTIVE
+  MAINTENANCE
+}
+
+enum ReservationStatus {
+  ACTIVE
+  CANCELED
+  COMPLETED
+}
