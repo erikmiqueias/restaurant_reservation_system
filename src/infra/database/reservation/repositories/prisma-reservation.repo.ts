@@ -59,7 +59,6 @@ export class PrismaReservationRepository implements ReservationRepository {
         createdResevation.id,
       );
     } catch (error) {
-      console.log(error);
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === "P2034"
