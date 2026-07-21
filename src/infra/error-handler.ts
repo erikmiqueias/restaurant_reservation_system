@@ -19,6 +19,7 @@ import {
   ReservationOutOfRangeError,
   ReservationStartTimeConflictError,
   ReservationStartTimeInPastError,
+  ReservationTableConflictError,
   ReservationTooFarInFutureError,
 } from "../app/reservation/errors/reservation.error.js";
 
@@ -147,6 +148,13 @@ export const errorHandler = async (
 
   if (error instanceof ReservationGuestCountExceedsCapacityError) {
     return reply.status(400).send({
+      code: error.name,
+      message: error.message,
+    });
+  }
+
+  if (error instanceof ReservationTableConflictError) {
+    return reply.status(409).send({
       code: error.name,
       message: error.message,
     });

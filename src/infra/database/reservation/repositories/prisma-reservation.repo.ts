@@ -1,36 +1,73 @@
+import { Prisma } from "@prisma/client";
 import { ReservationRepository } from "../../../../app/reservation/ports/out/repositories/reservation.interface.js";
 import { Reservation } from "../../../../domain/reservation/entities/reservation.js";
 import client from "../../prisma/db.js";
+import { ReservationTableConflictError } from "../../../../app/reservation/errors/reservation.error.js";
 
 export class PrismaReservationRepository implements ReservationRepository {
   async create(reservation: Reservation): Promise<Reservation> {
-    const createdReservation = await client.reservation.create({
-      data: {
-        id: reservation.id,
-        startTime: reservation.startTime,
-        endTime: reservation.endTime,
-        status: reservation.status,
-        createdAt: reservation.createdAt,
-        updatedAt: reservation.updatedAt,
-        tableId: reservation.tableId,
-        userId: reservation.userId,
-        guestCount: reservation.guestCount,
-      },
-    });
+    try {
+      const createdResevation = await client.$transaction(
+        async (tx) => {
+          const conflict = await tx.reservation.findFirst({
+            where: {
+              tableId: reservation.tableId,
+              status: "ACTIVE",
+              AND: [
+                {
+                  startTime: {
+                    lt: reservation.endTime,
+                  },
+                  endTime: {
+                    gt: reservation.startTime,
+                  },
+                },
+              ],
+            },
+          });
 
-    return Reservation.restore(
-      {
-        startTime: createdReservation.startTime,
-        endTime: createdReservation.endTime,
-        status: createdReservation.status,
-        createdAt: createdReservation.createdAt,
-        updatedAt: createdReservation.updatedAt,
-        tableId: createdReservation.tableId,
-        userId: createdReservation.userId,
-        guestCount: createdReservation.guestCount,
-      },
-      createdReservation.id,
-    );
+          if (conflict) throw new ReservationTableConflictError();
+          return await tx.reservation.create({
+            data: {
+              id: reservation.id,
+              startTime: reservation.startTime,
+              endTime: reservation.endTime,
+              status: reservation.status,
+              guestCount: reservation.guestCount,
+              tableId: reservation.tableId,
+              userId: reservation.userId,
+              createdAt: reservation.createdAt,
+              updatedAt: reservation.updatedAt,
+            },
+          });
+        },
+        {
+          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        },
+      );
+      return Reservation.restore(
+        {
+          tableId: createdResevation.tableId,
+          userId: createdResevation.userId,
+          startTime: createdResevation.startTime,
+          endTime: createdResevation.endTime,
+          status: createdResevation.status,
+          guestCount: createdResevation.guestCount,
+          createdAt: createdResevation.createdAt,
+          updatedAt: createdResevation.updatedAt ?? undefined,
+        },
+        createdResevation.id,
+      );
+    } catch (error) {
+      console.log(error);
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2034"
+      ) {
+        throw new ReservationTableConflictError();
+      }
+      throw error;
+    }
   }
   async findConflictingReservations(
     tableId: string,

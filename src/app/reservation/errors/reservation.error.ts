@@ -48,3 +48,10 @@ export class ReservationOutOfRangeError extends Error {
     this.name = "RESERVATION_OUT_OF_RANGE";
   }
 }
+
+export class ReservationTableConflictError extends Error {
+  constructor() {
+    super("A reservation for this table already exists in this time.");
+    this.name = "RESERVATION_TABLE_CONFLICT";
+  }
+}
